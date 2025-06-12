@@ -1,0 +1,9 @@
+-r base.txt
+fastapi>=0.68.0
+uvicorn>=0.15.0
+prometheus-client>=0.14.0
+python-jose>=3.3.0
+httpx>=0.24.0
+prometheus-fastapi-instrumentator>=6.0.0
+structlog>=23.1.0
+

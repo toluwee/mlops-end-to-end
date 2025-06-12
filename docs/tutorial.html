@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>From Model to Production: A Data Scientist's Guide to MLOps</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            line-height: 1.6;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #2c3e50;
+        }
+        h1, h2, h3 { color: #34495e; }
+        .container { margin: 20px auto; }
+        .insight {
+            background-color: #e3f2fd;
+            border-left: 5px solid #2196f3;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .warning {
+            background-color: #fff3e0;
+            border-left: 5px solid #ff9800;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        pre {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        code { background: #f8f9fa; padding: 2px 5px; border-radius: 3px; }
+        .diagram {
+            font-family: monospace;
+            white-space: pre;
+            background: #f8f9fa;
+            padding: 20px;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>From Model to Production: A Data Scientist's Guide to MLOps</h1>
+
+    <div class="container">
+        <div class="insight">
+            <h3>Who This Guide Is For</h3>
+            <p>You're comfortable building ML models but want to understand how to deploy them reliably in production. This guide explains not just the how, but the why behind each MLOps component.</p>
+        </div>
+
+        <h2>Why MLOps?</h2>
+        <p>As a data scientist, you've probably experienced these challenges:</p>
+        <ul>
+            <li>Your model works perfectly in Jupyter but fails in production</li>
+            <li>You can't remember which parameters gave the best results</li>
+            <li>Your model's performance degrades over time, but you don't know why</li>
+            <li>Deployment becomes a bottleneck</li>
+        </ul>
+
+        <p>MLOps solves these problems by providing:</p>
+        <div class="diagram">
+Model Development        →    Deployment Pipeline      →     Production System
+─────────────────            ──────────────────            ─────────────────
+Experiments tracked          Containerized model           Auto-scaling
+Parameters logged           Automated testing             Performance monitored
+Versions managed           Consistent deployment         Drift detection</div>
+
+        <h2>Core Components: A Deep Dive</h2>
+
+        <h3>1. Experiment Tracking with MLflow</h3>
+        <div class="insight">
+            <strong>Why MLflow?</strong>
+            <p>Machine learning experiments are inherently messy. You try different parameters, architectures, and data preprocessing steps. MLflow automatically tracks everything, making your work reproducible.</p>
+        </div>
+
+        <p>Let's see it in action:</p>
+        <pre>
+# Start MLflow server
+python make.py mlflow-server
+
+# Train a model (in another terminal)
+python make.py train-model</pre>
+
+        <p>Visit <a href="http://localhost:5000">http://localhost:5000</a> and you'll see:</p>
+        <ul>
+            <li>Every training run's parameters and results</li>
+            <li>Model artifacts automatically saved</li>
+            <li>Performance metrics tracked over time</li>
+        </ul>
+
+        <div class="warning">
+            <strong>Common Pitfall:</strong> Don't wait until deployment to start tracking experiments. Start using MLflow during development - it's invaluable for reproducibility.
+        </div>
+
+        <h3>2. Model Serving with FastAPI</h3>
+        <div class="insight">
+            <strong>Why FastAPI?</strong>
+            <p>Your model needs to be accessible to other applications. FastAPI makes this easy while providing automatic documentation, validation, and high performance.</p>
+        </div>
+
+        <p>FastAPI is fast (as the name suggests), modern, and automatically generates interactive API documentation. It's type-safe and handles validation out of the box.</p>
+
+        <p>Our API looks like this:</p>
+        <pre>
+from fastapi import FastAPI
+from src.api.models import PredictionRequest
+
+app = FastAPI()
+
+@app.post("/predict")
+async def predict(request: PredictionRequest):
+    return {"prediction": model.predict([request.features])[0]}</pre>
+
+        <p>Run it locally:</p>
+        <pre>python make.py run-api</pre>
+
+        <p>Visit <a href="http://localhost:8000/docs">http://localhost:8000/docs</a> to see the automatic API documentation.</p>
+
+        <h3>3. Containerization with Docker</h3>
+        <div class="insight">
+            <strong>Why Docker?</strong>
+            <p>Docker ensures your model runs the same way everywhere by packaging all dependencies. No more "it works on my machine" problems.</p>
+        </div>
+
+        <p>Our setup uses:</p>
+        <ul>
+            <li>Multi-stage builds for smaller images</li>
+            <li>Production-ready configurations</li>
+            <li>Health checks for reliability</li>
+        </ul>
+
+        <p>Build and run the container:</p>
+        <pre>
+docker-compose up --build</pre>
+
+        <h3>4. Monitoring and Observability</h3>
+        <div class="insight">
+            <strong>Why Monitor?</strong>
+            <p>Models can silently degrade. Monitoring helps catch issues before they impact your business.</p>
+        </div>
+
+        <p>We monitor:</p>
+        <ul>
+            <li>Model performance metrics</li>
+            <li>Data drift and concept drift</li>
+            <li>System health (latency, memory, CPU)</li>
+        </ul>
+
+        <div class="diagram">
+Prometheus ←── Metrics Collection ←── Your API
+     ↓
+Grafana Dashboards
+─────────────────
+• Performance
+• Drift Detection
+• System Health</div>
+
+        <h3>5. Kubernetes Deployment</h3>
+        <div class="insight">
+            <strong>Why Kubernetes?</strong>
+            <p>Kubernetes handles scaling, rolling updates, and self-healing of your model deployment.</p>
+        </div>
+
+        <p>Key components in our setup:</p>
+        <ul>
+            <li>Horizontal Pod Autoscaling (HPA) for automatic scaling</li>
+            <li>Rolling updates for zero-downtime deployments</li>
+            <li>Resource limits and requests for stability</li>
+        </ul>
+
+        <div class="warning">
+            <strong>Production Tip:</strong> Start with basic Kubernetes features. Add complexity only when needed.
+        </div>
+
+        <h2>Next Steps</h2>
+        <p>Now that you understand the basics:</p>
+        <ul>
+            <li>Explore the code in our repository</li>
+            <li>Try deploying your own model</li>
+            <li>Set up monitoring for your specific needs</li>
+            <li>Join our community for support</li>
+        </ul>
+
+        <div class="insight">
+            <strong>Remember:</strong>
+            <p>MLOps is a journey. Start small, iterate, and gradually add complexity as your needs grow.</p>
+        </div>
+    </div>
+</body>
+</html>

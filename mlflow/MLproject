@@ -1,0 +1,10 @@
+name: iris-classification
+
+python_env: python_env.yaml
+
+entry_points:
+  main:
+    parameters:
+      data_path: {type: string, default: "data/iris.csv"}
+      experiment_name: {type: string, default: "iris-classification"}
+    command: "python -m src.models.train --data-path {data_path} --experiment-name {experiment_name}"
