@@ -54,7 +54,7 @@ def format_code():
 
 def mlflow_server():
     """Start MLflow server"""
-    run_command("mlflow server --host 0.0.0.0 --port 5000")
+    run_command("mlflow server --host 127.0.0.1 --port 5000")
 
 def train_model():
     """Train model"""

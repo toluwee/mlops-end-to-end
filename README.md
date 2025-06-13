@@ -2,6 +2,21 @@
 
 A production-ready MLOps pipeline implementing best practices for model training, serving, monitoring, and deployment using modern tools and technologies.
 
+## Table of Contents
+- [Architecture Overview](#architecture-overview)
+- [Features](#features)
+- [Badges](#badges)
+- [Environment Variables](#environment-variables)
+- [Quick Start](#quick-start)
+- [Running the Pipeline](#running-the-pipeline)
+- [Monitoring](#monitoring)
+- [API Usage](#api-usage)
+- [Testing](#testing)
+- [Code Quality](#code-quality)
+- [Project Structure](#project-structure)
+- [Contributing](#contributing)
+- [License](#license)
+
 ## Architecture Overview
 
 ```
@@ -32,6 +47,30 @@ A production-ready MLOps pipeline implementing best practices for model training
 - **Monitoring**: Prometheus metrics, Grafana dashboards, and drift detection
 - **Logging**: Structured JSON logging
 - **Data Validation**: Input validation and feature drift monitoring
+
+## Badges
+
+<!-- Add badges as needed, e.g. build, coverage, license -->
+
+## Environment Variables
+
+All configuration is managed via environment variables. Copy `.env.example` to `.env` and adjust as needed.
+
+| Variable                      | Description                                 | Default/Example           |
+|-------------------------------|---------------------------------------------|---------------------------|
+| MLFLOW_TRACKING_URI           | MLflow server URI                           | http://127.0.0.1:5000     |
+| MLFLOW_EXPERIMENT_NAME        | MLflow experiment name                      | iris-classification       |
+| MLFLOW_REGISTERED_MODEL_NAME  | MLflow registered model name                | iris-classifier           |
+| API_HOST                      | API server host                             | 0.0.0.0                  |
+| API_PORT                      | API server port                             | 8000                     |
+| LOG_LEVEL                     | Logging level                               | INFO                     |
+| PROMETHEUS_PORT               | Prometheus port                             | 9090                     |
+| GRAFANA_PORT                  | Grafana port                                | 3000                     |
+| DB_HOST                       | Database host (if using external DB)        | localhost                 |
+| DB_PORT                       | Database port                               | 5432                     |
+| DB_NAME                       | Database name                               | mlflow                   |
+| DB_USER                       | Database user                               | mlflow                   |
+| DB_PASSWORD                   | Database password                           | mlflow_password           |
 
 ## Quick Start
 
@@ -72,18 +111,26 @@ All commands below work the same way on Windows, Unix, and MacOS:
 
 2. **Train Initial Model**
    ```bash
-   # Open another terminal
+   # Open another terminal --be sure to activate the virtual environment there as well
    python make.py train-model
    ```
-   View training results at http://localhost:5000
+   View training results at http://127.0.0.1:5000 (Windows)  http://localhost:5000 (unix/macOS)
 
-3. **Start API Server**
+3. **Promote Preferred Model**
+   ```bash
+   # Once a model with preferred performance is identified, promote it.
+   # TODO: implement automatic promotion of best model based on a metric threshold
+   python make.py promote-model
+   ```
+
+4. **Start API Server**
    ```bash
    python make.py run-api
    ```
-### Endpoints   
-   
-   You can access the API at http://localhost:8000 with the following available endpoints:
+
+### Endpoints
+
+You can access the API at http://127.0.0.1:8000 with the following available endpoints:
 
 - `/docs` - Interactive API documentation (Swagger UI)
 - `/metrics` - Prometheus metrics
@@ -91,8 +138,7 @@ All commands below work the same way on Windows, Unix, and MacOS:
 - `/monitoring/statistics` - Model monitoring statistics
 - `/predict` - Prediction endpoint (POST requests)
 
-
-   For instance, API documentation is available at http://localhost:8000/docs
+For instance, API documentation is available at http://127.0.0.1:8000/docs
 
 ### Option 2:  Docker Deployment
 
@@ -106,10 +152,10 @@ python make.py docker-stop
 ```
 
 This will start:
-- MLflow server (http://localhost:5000)
-- Model API (http://localhost:8000)
-- Prometheus (http://localhost:9090)
-- Grafana (http://localhost:3000)
+- MLflow server (http://127.0.0.1:5000)
+- Model API (http://127.0.0.1:8000)
+- Prometheus (http://127.0.0.1:9090)
+- Grafana (http://127.0.0.1:3000)
 
 ### Option 3:  Kubernetes Deployment
 
@@ -138,7 +184,7 @@ This will start:
 - `/model/info` - Current model information
 
 ### Grafana Dashboards
-Access the monitoring dashboard at http://localhost:3000 (default credentials: admin/admin)
+Access the monitoring dashboard at http://127.0.0.1:3000 (default credentials: admin/admin)
 
 ## API Usage
 
@@ -198,23 +244,32 @@ Visit `http://127.0.0.1:8000/docs` (Windows) or `http://localhost:8000/docs` (Un
 ## Testing
 
 ```bash
-make test
+python make.py test
 ```
 
 ## Code Quality
 
 ```bash
-make lint
-make format
+python make.py lint
+python make.py format
 ```
 
-## Next Steps
+## Troubleshooting & FAQ
 
-- Implement A/B testing capabilities
-- Add automated retraining pipelines
-- Enhance data quality monitoring
-- Add custom alert rules
-- Implement blue-green deployments
+- **Virtual environment not activating?**
+  - On Windows, use `venv\Scripts\activate`. On Unix/MacOS, use `source venv/bin/activate`.
+- **MLflow not tracking runs?**
+  - Ensure `MLFLOW_TRACKING_URI` is set correctly in your `.env` file.
+- **Docker build fails?**
+  - Make sure Docker is running and you have permissions.
+- **Kubernetes deployment issues?**
+  - Check your cluster context and namespace.
+
+## References
+- [MLflow Documentation](https://mlflow.org/docs/latest/index.html)
+- [FastAPI Documentation](https://fastapi.tiangolo.com/)
+- [Prometheus](https://prometheus.io/)
+- [Grafana](https://grafana.com/)
 
 ## Project Structure
 
