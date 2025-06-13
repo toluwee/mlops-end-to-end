@@ -23,13 +23,13 @@ class ModelMonitor:
     def log_prediction(self, features: List[float], prediction: int, latency: float = None):
         """Log a prediction"""
         with self.lock:
-            self.predictions.append(prediction)
+            self.predictions.append(int(prediction))  # Convert numpy.int32 to Python int
             if latency:
-                self.latencies.append(latency)
+                self.latencies.append(float(latency))  # Convert to float if numpy type
 
             # Log feature values for drift detection
             for i, value in enumerate(features):
-                self.feature_values[f"feature_{i}"].append(value)
+                self.feature_values[f"feature_{i}"].append(float(value))  # Convert to float if numpy type
 
     def log_error(self, error: str):
         """Log an error"""
@@ -38,48 +38,59 @@ class ModelMonitor:
 
     def detect_drift(self) -> Dict[str, Any]:
         """Simple drift detection based on feature statistics"""
-        if len(self.features) < 100:
-            return {"drift_detected": False, "reason": "Insufficient data"}
+        with self.lock:
+            if len(next(iter(self.feature_values.values()), [])) < 100:
+                return {"drift_detected": False, "reason": "Insufficient data"}
 
-        recent_features = np.array(list(self.features)[-100:])
-        older_features = np.array(list(self.features)[-200:-100]) if len(self.features) >= 200 else None
+            drift_results = {}
+            for feature_name, values in self.feature_values.items():
+                values_array = np.array(list(values))
+                recent = values_array[-100:]
+                older = values_array[-200:-100] if len(values_array) >= 200 else None
 
-        if older_features is None:
-            return {"drift_detected": False, "reason": "Insufficient historical data"}
+                if older is None:
+                    drift_results[feature_name] = {
+                        "drift_detected": False,
+                        "reason": "Insufficient historical data"
+                    }
+                    continue
 
-        # Simple statistical test
-        recent_mean = np.mean(recent_features, axis=0)
-        older_mean = np.mean(older_features, axis=0)
+                # Simple statistical test
+                recent_mean = float(np.mean(recent))  # Convert to Python float
+                older_mean = float(np.mean(older))  # Convert to Python float
 
-        # Calculate relative change
-        relative_change = np.abs((recent_mean - older_mean) / (older_mean + 1e-8))
-        drift_threshold = 0.1  # 10% change threshold
+                # Calculate relative change
+                relative_change = abs((recent_mean - older_mean) / (older_mean + 1e-8))
+                drift_threshold = 0.1  # 10% change threshold
 
-        drift_detected = np.any(relative_change > drift_threshold)
+                drift_results[feature_name] = {
+                    "drift_detected": relative_change > drift_threshold,
+                    "relative_change": float(relative_change),  # Convert to Python float
+                    "threshold": drift_threshold
+                }
 
-        return {
-            "drift_detected": drift_detected,
-            "max_relative_change": float(np.max(relative_change)),
-            "drift_threshold": drift_threshold,
-            "features_with_drift": [i for i, change in enumerate(relative_change) if change > drift_threshold]
-        }
+            return {
+                "feature_drift": drift_results,
+                "any_drift_detected": any(r["drift_detected"] for r in drift_results.values())
+            }
 
     def get_statistics(self) -> Dict[str, Any]:
         """Get monitoring statistics"""
-        if not self.predictions:
-            return {
-                "request_count": 0,
-                "average_latency": 0.0,
-                "error_count": self.error_count,
-                "feature_statistics": {},
-                "status": "No predictions made yet"
-            }
-
-        feature_stats = {}
         with self.lock:
+            if not self.predictions:
+                return {
+                    "request_count": 0,
+                    "average_latency": 0.0,
+                    "error_count": self.error_count,
+                    "feature_statistics": {},
+                    "status": "No predictions made yet"
+                }
+
+            predictions_list = list(self.predictions)
+            feature_stats = {}
             for feature_name, values in self.feature_values.items():
                 if values:  # Only calculate stats if we have values
-                    values_array = np.array(values)
+                    values_array = np.array(list(values))
                     feature_stats[feature_name] = {
                         "min": float(np.min(values_array)),
                         "max": float(np.max(values_array)),
@@ -87,11 +98,17 @@ class ModelMonitor:
                         "std": float(np.std(values_array))
                     }
 
+            # Convert numpy types to Python native types
+            prediction_counts = {}
+            unique_predictions, counts = np.unique(predictions_list, return_counts=True)
+            for pred, count in zip(unique_predictions, counts):
+                prediction_counts[int(pred)] = int(count)
+
             return {
-                "request_count": len(self.predictions),
-                "average_latency": float(np.mean(self.latencies)) if self.latencies else 0.0,
+                "request_count": len(predictions_list),
+                "average_latency": float(np.mean(list(self.latencies))) if self.latencies else 0.0,
                 "error_count": self.error_count,
                 "feature_statistics": feature_stats,
-                "prediction_counts": dict(zip(*np.unique(list(self.predictions), return_counts=True))),
-                "uptime_seconds": time.time() - self.start_time
+                "prediction_counts": prediction_counts,
+                "uptime_seconds": float(time.time() - self.start_time)
             }

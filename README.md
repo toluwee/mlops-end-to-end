@@ -116,6 +116,7 @@ All commands below work the same way on Windows, Unix, and MacOS:
    ```
    View training results at http://127.0.0.1:5000 (Windows)  http://localhost:5000 (unix/macOS)
 
+
 3. **Promote Preferred Model**
    ```bash
    # Once a model with preferred performance is identified, promote it.
@@ -123,9 +124,15 @@ All commands below work the same way on Windows, Unix, and MacOS:
    python make.py promote-model
    ```
 
+
+
 4. **Start API Server**
    ```bash
+   # stop and restart the mlflow server before this to ensure model has been promoted
    python make.py run-api
+   
+   
+   
    ```
 
 ### Endpoints
@@ -198,17 +205,60 @@ curl http://localhost:8000/health
 ```
 
 ### Make Prediction
+
+1. Using curl from the command line:
 ```bash
 # Windows
+Using Command Prompt:
+
 curl -X POST "http://127.0.0.1:8000/predict" -H "Content-Type: application/json" -d "{\"features\": [5.1, 3.5, 1.4, 0.2]}"
+
 
 # Unix/MacOS
 curl -X POST "http://localhost:8000/predict" \
      -H "Content-Type: application/json" \
      -d '{"features": [5.1, 3.5, 1.4, 0.2]}'
 ```
+2. Using PowerShell:
+```powershell
+$body = @{
+    features = @(5.1, 3.5, 1.4, 0.2)
+} | ConvertTo-Json
 
-The features array represents:
+Invoke-WebRequest -Uri "http://127.0.0.1:8000/predict" `
+    -Method Post `
+    -Headers @{"Content-Type"="application/json"} `
+    -Body $body
+```
+
+3 Using Python:
+```python
+import requests
+
+data = {
+    "features": [5.1, 3.5, 1.4, 0.2]
+}
+
+response = requests.post(
+    "http://127.0.0.1:8000/predict",
+    json=data
+)
+print(response.json())
+```
+
+4. Using the Swagger UI interface:
+- Open http://127.0.0.1:8000/docs in your browser
+- Find the `/predict` endpoint
+- Click on "Try it out"
+- Enter your input in the JSON format:
+```json
+{
+  "features": [5.1, 3.5, 1.4, 0.2]
+}
+```
+- Click "Execute"
+
+The features array represents Iris flower measurements in this order:
 - Sepal Length: 5.1
 - Sepal Width: 3.5
 - Petal Length: 1.4

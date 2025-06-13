@@ -29,6 +29,7 @@ PREDICTION_COUNTER = Counter('model_predictions_total', 'Total predictions', ['p
 class ModelState:
     def __init__(self):
         self.model = None
+        self.monitor = ModelMonitor()  # Initialize monitor
 
 state = ModelState()
 
@@ -133,6 +134,17 @@ async def predict(request: PredictionRequest):
     REQUEST_COUNT.inc()
 
     try:
+        # Validate input features
+        if any(x < 0 for x in request.features):
+            error_msg = "Invalid input: negative values are not allowed for iris features"
+            state.monitor.log_error(error_msg)
+            raise HTTPException(status_code=400, detail=error_msg)
+
+        if len(request.features) != 4:
+            error_msg = "Invalid input: exactly 4 features required"
+            state.monitor.log_error(error_msg)
+            raise HTTPException(status_code=400, detail=error_msg)
+
         model = get_model()
         if model is None:
             raise HTTPException(status_code=503, detail="Model not loaded")
@@ -151,7 +163,7 @@ async def predict(request: PredictionRequest):
             probabilities = model.predict_proba(input_data) if hasattr(model, 'predict_proba') else None
 
         # Log prediction for monitoring
-        monitor.log_prediction(request.features, prediction[0], time.time() - start_time)
+        state.monitor.log_prediction(request.features, prediction[0], time.time() - start_time)
 
         # Update metrics
         PREDICTION_COUNTER.labels(predicted_class=str(prediction[0])).inc()
@@ -173,8 +185,11 @@ async def predict(request: PredictionRequest):
 
         return response
 
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error(f"Prediction error: {e}")
+        state.monitor.log_error(str(e))
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/metrics")
@@ -207,4 +222,4 @@ async def model_info():
 @app.get("/monitoring/statistics")
 async def get_monitoring_statistics():
     """Get model monitoring statistics"""
-    return monitor.get_statistics()
+    return state.monitor.get_statistics()
