@@ -124,16 +124,16 @@ All commands below work the same way on Windows, Unix, and MacOS:
    python make.py promote-model
    ```
 
-
-
 4. **Start API Server**
    ```bash
    # stop and restart the mlflow server before this to ensure model has been promoted
-   python make.py run-api
-   
-   
+   python make.py run-api     
    
    ```
+This will start:
+- MLflow server (http://127.0.0.1:5000)
+- Model API (http://127.0.0.1:8000)
+- API endpoints including /metrics (Prometheus metrics endpoint)
 
 ### Endpoints
 
@@ -143,19 +143,17 @@ You can access the API at http://127.0.0.1:8000 with the following available end
 - `/metrics` - Prometheus metrics
 - `/health` - Health check endpoint
 - `/monitoring/statistics` - Model monitoring statistics
-- `/predict` - Prediction endpoint (POST requests)
+- `/predict` - Prediction endpoint (POST  requests)
 
 For instance, API documentation is available at http://127.0.0.1:8000/docs
 
-### Option 2:  Docker Deployment
+### Option 2:  Docker Deployment (preferred to local)
 
+Ensure Docker Desktop is on
 Commands are the same for all platforms:
 ```bash
 # Start all services
 python make.py docker-run
-
-# Stop all services
-python make.py docker-stop
 ```
 
 This will start:
@@ -164,8 +162,12 @@ This will start:
 - Prometheus (http://127.0.0.1:9090)
 - Grafana (http://127.0.0.1:3000)
 
+```bash
+# Stop all services
+python make.py docker-stop
+```
 ### Option 3:  Kubernetes Deployment
-
+Ensure Docker Desktop is on and Enable Kubernetes in Docker Desktop
 1. **Create Namespace**
    ```bash
    python make.py k8s-create-namespace
